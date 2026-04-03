@@ -1,0 +1,170 @@
+/* =========================================
+   1. 全局基础设置
+   ========================================= */
+* {
+    font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+    font-size: 14px;
+    color: #334155; /* 柔和深灰蓝 */
+}
+
+/* 主窗口底层：采用冷色调浅灰，衬托白色卡片 */
+QWidget#MainWidget {
+    background-color: #F8FAFC; 
+}
+
+/* 调整卡片间距 */
+#MainWidget > QHBoxLayout {
+    spacing: 12px;
+    margin: 12px;
+}
+
+/* =========================================
+   2. 侧边栏 (Sidebar)
+   ========================================= */
+QWidget#sidebarWidget {
+    background-color: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    margin: 0px; 
+}
+
+/* 侧边栏列表及其视口同步圆角修复 */
+QListWidget#listChatHistory {
+    background: transparent;
+    border: none;
+    outline: none;
+}
+
+QListWidget#listChatHistory::viewport {
+    background: transparent;
+    border-radius: 12px;
+}
+
+/* 历史项悬停与选中 */
+QListWidget#listChatHistory::item {
+    padding: 10px;
+    margin: 4px 8px; 
+    border-radius: 8px;
+    color: #475569;
+}
+
+QListWidget#listChatHistory::item:hover {
+    background-color: #F1F5F9;
+}
+
+QListWidget#listChatHistory::item:selected {
+    background-color: #FFF6F3;
+    color: #1E293B;                 
+    border-left: 4px solid #DE7B52; /* 品牌橙侧条 */
+    font-weight: bold;
+}
+
+/* =========================================
+   3. 聊天展示区 (Chat List)
+   ========================================= */
+QListWidget#listWidgetChat::viewport {
+    background: transparent;
+    border-radius: 12px; /* 必须与父级 QListWidget 一致 */
+}
+
+
+/* =========================================
+   4. 输入区 (Input Area)
+   ========================================= */
+QTextEdit#textEditInput {
+    background-color: #FFFFFF;
+    border: 1px solid #CBD5E1;
+    border-radius: 10px;
+    padding: 12px;
+}
+
+QTextEdit#textEditInput:focus {
+    border: 1px solid #DE7B52; /* 聚焦时使用柔和橙 */
+    background-color: #FFFCFA;
+}
+
+/* =========================================
+   5. 按钮组 (Buttons)
+   ========================================= */
+/* 发送与新建对话 - 陶土珊瑚橙方案 */
+QPushButton#btnNewChat,
+QPushButton#btnSend {
+    background-color: #DE7B52;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    padding: 10px 18px;
+}
+
+
+QPushButton#btnNewChat:hover,
+QPushButton#btnSend:hover {
+    background-color: #CD6D46;
+}
+
+QPushButton#btnNewChat:pressed,
+QPushButton#btnSend:pressed {
+    background-color: #B55A35;
+}
+
+/* 幽灵按钮 (附件、设置、删除) */
+QPushButton#btnToggleSidebar,
+QPushButton#btnUploadFile,
+QPushButton#btn_DeleteFile {
+    background: transparent;
+    border: none;
+    color: #64748B;
+    font-weight: bold;
+    padding: 10px 18px;
+}
+
+QPushButton#btnToggleSidebar:hover,
+QPushButton#btnSettings:hover,
+QPushButton#btnUploadFile:hover,
+QPushButton#btnSettings:hover,
+QPushButton#btn_DeleteFile:hover {
+    background-color: #F1F5F9;
+    border-radius: 6px;
+    color: #0F172A;
+}
+
+/* =========================================
+   6. 滚动条美化 (ScrollBars)
+   ========================================= */
+QScrollBar:vertical {
+    border: none;
+    background: transparent;
+    width: 6px;
+    margin: 4px 2px 4px 2px;
+}
+
+QScrollBar::handle:vertical {
+    background: #CBD5E1;
+    min-height: 30px;
+    border-radius: 3px;
+}
+
+QScrollBar::handle:vertical:hover { background: #94A3B8; }
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: transparent; }
+
+/* =========================================
+   7. 设置页面表单 (Settings)
+   ========================================= */
+QGroupBox {
+    background-color: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+    margin-top: 24px;
+    padding: 20px;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 15px;
+    padding: 0 8px;
+    color: #2C3E50;
+    font-weight: bold;
+}
