@@ -15,7 +15,7 @@ TaskResult ActionListCrossSearch::execute(const ParsedIntent& intent)
         return result;
     }
 
-    // 🌟 1. 动态提取实体
+    // 1. 动态提取实体
     QStringList extractedNames = AtomExtractEntities::execute(intent.uploadedFileText, intent.extractTarget);
 
     if (extractedNames.isEmpty()) {
@@ -25,7 +25,7 @@ TaskResult ActionListCrossSearch::execute(const ParsedIntent& intent)
 
     qDebug() << "开始按实体拆分召回，提取目标:" << intent.extractTarget << " 列表:" << extractedNames;
 
-    // 🌟 2. 拆分循环召回，统一汇总去重
+    // 2. 拆分循环召回，统一汇总去重
     QList<DocChunk> allRecalledChunks;
     QSet<int> recalledChunkIds;
 
@@ -49,10 +49,10 @@ TaskResult ActionListCrossSearch::execute(const ParsedIntent& intent)
         return result;
     }
 
-    // 🌟 3. 联表查询补全父文本
+    // 3. 联表查询补全父文本
     QList<DocChunk> fullChunks = AtomFetchParent::execute(allRecalledChunks, 30);
 
-    // 🌟 4. 交叉精排去重 (精排 Query 应该强调核心意图)
+    // 4. 交叉精排去重 (精排 Query 应该强调核心意图)
     QString rankQuery = intent.extractTarget + "的" + intent.keywords.join(" ");
     QList<DocChunk> finalSlices = AtomRerankFilter::execute(rankQuery, fullChunks, 8);
 

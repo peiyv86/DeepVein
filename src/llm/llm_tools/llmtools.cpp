@@ -43,7 +43,13 @@ ParsedIntent parsedJson(const nlohmann::json& j_res)
         // 3. 物理提取 {} 结构，免疫 Markdown 标记
         int jsonStart = cleanStr.indexOf('{');
         int jsonEnd = cleanStr.lastIndexOf('}');
-        if (jsonStart != -1 && jsonEnd != -1 && jsonEnd >= jsonStart) {
+
+        // 找到了开头但没找到结尾（截断情况）
+        if (jsonStart != -1 && jsonEnd == -1) {
+            cleanStr = cleanStr.mid(jsonStart); // 从开头截取到最后
+            ExceptHandler::getInstance().reportError(ErrorCode::LlmParseFailed, "警告：检测到 JSON 可能被截断，尝试暴力修补");
+        }
+        else if (jsonStart != -1 && jsonEnd != -1 && jsonEnd >= jsonStart) {
             cleanStr = cleanStr.mid(jsonStart, jsonEnd - jsonStart + 1);
         } else {
             ExceptHandler::getInstance().reportError(ErrorCode::LlmParseFailed, "无法在大模型回复中定位到有效 JSON 结构");
@@ -51,9 +57,36 @@ ParsedIntent parsedJson(const nlohmann::json& j_res)
         }
 
         // [调试探针] 记录清洗后的数据
-        qDebug() << "[探针1]路由JSON已剥离=\n" << cleanStr;
+        qDebug() << "[探针1]路由JSON待解析=\n" << cleanStr;
 
-        nlohmann::json j_routing = nlohmann::json::parse(cleanStr.toStdString());
+        nlohmann::json j_routing;
+        try {
+            j_routing = nlohmann::json::parse(cleanStr.toStdString());
+        } catch (const nlohmann::json::parse_error& e) {
+            qWarning() << "标准 JSON 解析失败，启动暴力括号补全机制...";
+
+            // 补齐丢失的右括号
+            int openBraces = cleanStr.count('{');
+            int closeBraces = cleanStr.count('}');
+            int openBrackets = cleanStr.count('[');
+            int closeBrackets = cleanStr.count(']');
+            int quotes = cleanStr.count('"');
+
+            // 如果引号是单数，说明字符串没闭合，补一个引号
+            if (quotes % 2 != 0) cleanStr += "\"";
+
+            // 补齐数组和对象括号 (注意顺序，通常先闭合数组再闭合对象)
+            while (closeBrackets < openBrackets) { cleanStr += "]"; closeBrackets++; }
+            while (closeBraces < openBraces) { cleanStr += "}"; closeBraces++; }
+
+            try {
+                j_routing = nlohmann::json::parse(cleanStr.toStdString());
+                qDebug() << "暴力补全成功！修复后的JSON:\n" << cleanStr;
+            } catch (...) {
+                ExceptHandler::getInstance().reportError(ErrorCode::LlmParseFailed, "JSON 彻底破损，无法修补，已放弃");
+                return out; // 返回默认的 semantic_search 意图
+            }
+        }
 
         // 4. 安全提取意图 (Intent)
         QString intentStr = "semantic_search";
@@ -66,19 +99,21 @@ ParsedIntent parsedJson(const nlohmann::json& j_res)
         if (j_routing.contains("params") && j_routing["params"].is_object()) {
             auto params = j_routing["params"];
 
-            // 精确匹配分支
-            if (intentStr == "exact_match" && params.contains("filename") && params["filename"].is_string()) {
+            // 修复只要有 filename 或 target_filename，就优先提取为 targetFileName
+            if (params.contains("filename") && params["filename"].is_string()) {
                 out.targetFileName = QString::fromStdString(params["filename"].get<std::string>());
             }
-            // 搜索类分支
-            else if (intentStr == "semantic_search" || intentStr == "hybrid_compare" || intentStr == "list_cross_search") {
-                // 提取关键词数组
+            if (params.contains("target_filename") && params["target_filename"].is_string()) {
+                out.targetFileName = QString::fromStdString(params["target_filename"].get<std::string>());
+            }
+
+            // 搜索类分支 (正常提取 keywords)
+            if (intentStr == "semantic_search" || intentStr == "hybrid_compare" || intentStr == "list_cross_search") {
                 if (params.contains("keywords") && params["keywords"].is_array()) {
                     for (const auto& kw : params["keywords"]) {
                         if (kw.is_string()) out.keywords << QString::fromStdString(kw.get<std::string>());
                     }
                 }
-                // 兜底提取 query 字段
                 else if (params.contains("query") && params["query"].is_string()) {
                     out.keywords << QString::fromStdString(params["query"].get<std::string>());
                 }
@@ -88,7 +123,8 @@ ParsedIntent parsedJson(const nlohmann::json& j_res)
                 }
             }
         }
-        // 6. 终极兜底：API 幻觉处理（野蛮提取模式）
+
+        // 6. 兜底API幻觉处理
         else if (intentStr == "semantic_search") {
             ExceptHandler::getInstance().reportError(ErrorCode::LlmParseFailed, "警告：路由 JSON 丢失 params 字段，启动强制提取兜底");
             for (auto it = j_routing.begin(); it != j_routing.end(); ++it) {

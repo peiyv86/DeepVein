@@ -43,7 +43,7 @@ FileTxt HandlerPdf::extractText(const QString& filePath)
         return result;
     }
 
-    qDebug() << "📄 [PDFium] 正在进行坐标深度解析..." << filePath;
+    qDebug() << "[PDFium] 正在进行坐标深度解析..." << filePath;
     QString nativeText = readPdfWithPdfium(filePath);
 
     // 智能判定：如果原生字数够多，直接返回

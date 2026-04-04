@@ -18,7 +18,6 @@ public:
 
     bool init(const QString& dbPath);
 
-    // 新增：多线程并发与事务控制核心接口
     QSqlDatabase getThreadLocalConnection(); // 获取当前线程的专属连接 (公开给 ActionSemantic 使用)
     void beginTransaction();                 // 开启事务 (公开给 BuildIndexTask 使用)
     void commitTransaction();                // 提交事务

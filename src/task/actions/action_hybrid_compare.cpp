@@ -2,7 +2,7 @@
 #include "task/atoms/atom_hybrid_recall.h"
 #include "task/atoms/atom_fetch_parent.h"
 #include "task/atoms/atom_rerank_filter.h"
-#include "task/atoms/atom_exact_search.h" // 🚀 别忘了引入精准匹配原子
+#include "task/atoms/atom_exact_search.h"
 
 TaskResult ActionHybridCompare::execute(const ParsedIntent& intent)
 {
@@ -17,24 +17,43 @@ TaskResult ActionHybridCompare::execute(const ParsedIntent& intent)
 
     QList<DocChunk> finalLocalSlices;
 
-    // 🌟 核心双轨制路由
-    if (!intent.targetFileName.isEmpty()) {
-        // 🚀 轨道 A：用户明确指出了要和哪个文件对比！直接走精准查找，绕开智障的向量打分！
-        qDebug() << "进入跨文件精准对比，目标文件：" << intent.targetFileName;
-        finalLocalSlices = AtomExactSearch::execute(intent.targetFileName);
+    // 防漏网兜底：如果大模型犯傻，把后缀名 .txt 扔进了 keywords 里
+    QString realTargetFile = intent.targetFileName;
+    if (realTargetFile.isEmpty() && !intent.keywords.isEmpty()) {
+        for (const QString& kw : intent.keywords) {
+            if (kw.contains(".") && kw.length() > 3) { // 简单判定是否像文件名
+                realTargetFile = kw;
+                break;
+            }
+        }
+    }
 
-        if (finalLocalSlices.isEmpty()) {
-            result.directUIResponse = "在本地库中未找到名为“" + intent.targetFileName + "”的文件，无法对比。";
+    // 核心双轨制路由
+    if (!realTargetFile.isEmpty()) {
+        // 轨道 A：用户明确指出了目标文件！
+        qDebug() << "进入跨文件精准对比，目标文件：" << realTargetFile;
+        QList<DocChunk> fileChunks = AtomExactSearch::execute(realTargetFile);
+
+        if (fileChunks.isEmpty()) {
+            result.directUIResponse = "在本地库中未找到名为“" + realTargetFile + "”的文件，无法对比。";
             return result;
         }
 
-        // 防止目标文件太大撑爆 LLM，最多只取前 5 个切片
-        if (finalLocalSlices.size() > 5) {
-            finalLocalSlices = finalLocalSlices.mid(0, 5);
+        // 优化点：不要粗暴地切取前5个，而是用精排算法挑选目标文件中最相关的部分
+        if (fileChunks.size() > 5) {
+            QString rankQuery = intent.uploadedFileName + " " + intent.keywords.join(" ");
+            finalLocalSlices = AtomRerankFilter::execute(rankQuery, fileChunks, 5);
+
+            // 如果精排被全部过滤掉了（说明目标文件内容与当前附件差异极大），兜底取前几个片段
+            if (finalLocalSlices.isEmpty()) {
+                finalLocalSlices = fileChunks.mid(0, 5);
+            }
+        } else {
+            finalLocalSlices = fileChunks;
         }
     }
     else {
-        // 🚀 轨道 B：用户对比的是某个概念，走原有的“超级 HyDE 盲搜 + 精排”
+        // 轨道 B：用户未指明文件，走概念盲搜
         qDebug() << "进入跨文件语义对比，对比概念：" << intent.keywords;
         QString superHydeText = intent.hydeText + "\n" + intent.uploadedFileText;
         QList<DocChunk> recalledChunks = AtomHybridRecall::execute(intent.keywords, superHydeText);
@@ -54,11 +73,12 @@ TaskResult ActionHybridCompare::execute(const ParsedIntent& intent)
         }
     }
 
-    // 🌟 组装最终结果
+    // 组装最终结果
     for (auto& slice : finalLocalSlices) {
-        result.slices.push_back(std::move(slice));
+        result.slices.push_back(std::move(slice)); // 完美保留了正确的来源文件名称
     }
 
+    // 放入当前上传附件作为对比基准
     DocChunk attachmentChunk;
     attachmentChunk.chunkId = -1;
     attachmentChunk.fileName = "[当前上传附件] " + intent.uploadedFileName;

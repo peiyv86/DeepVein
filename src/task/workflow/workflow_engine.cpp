@@ -64,7 +64,7 @@ TaskResult WorkflowEngine::execute(const ParsedIntent& intent,
     context.uploadedFilePath = intent.uploadedFilePath;
     context.uploadedFileText = intent.uploadedFileText;
 
-    if (statusCallback) statusCallback("🧠 Agent 正在进行全局任务规划...");
+    if (statusCallback) statusCallback("Agent 正在进行全局任务规划...");
 
     // 2. 大脑规划阶段
     QString statusStr = context.uploadedFileName.isEmpty() ? "当前无附件" : "当前已挂载附件：[" + context.uploadedFileName + "]";
@@ -95,7 +95,7 @@ TaskResult WorkflowEngine::execute(const ParsedIntent& intent,
     // 3. 步进执行循环 (核心改造：查表法替代 if-else)
     for (const auto& step : plan) {
         if (statusCallback) {
-            statusCallback(QString("⚙️ [步骤 %1/%2] %3").arg(step.stepId).arg(plan.size()).arg(step.description));
+            statusCallback(QString("[步骤 %1/%2] %3").arg(step.stepId).arg(plan.size()).arg(step.description));
         }
 
         // 查找工具是否存在

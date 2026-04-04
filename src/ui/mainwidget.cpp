@@ -244,11 +244,6 @@ void MainWidget::onErrorOccurred(const QString& errorMsg)
     ui->btnSend->setEnabled(true);
 }
 
-// ... 保持 refreshModels, refreshSidebar, appendChatMessage, parseAiStreamToHtml 等其余实现逻辑完全一致 ...
-
-
-
-
 void MainWidget::on_btnBackToChat_clicked()
 {
     ui->stackedWidget->setCurrentIndex(0); // 返回对话

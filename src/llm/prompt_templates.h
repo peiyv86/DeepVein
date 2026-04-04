@@ -2,53 +2,70 @@
 #define PROMPT_TEMPLATES_H
 #include "core/global_defs.h"
 
-// 1.路由分配核心Prompt
 inline const QString PromptForGetIntent = R"(
-Role: Semantic Router API
-Task: Accurately classify the user's intent and output a JSON.
+<system>
+你是一个智能意图识别引擎。唯一任务是分析用户的输入，并严格输出一个合法的 JSON 对象。绝对不要输出任何解释性文字、Markdown 标记或额外空格。
+</system>
 
-[CRITICAL SCHEMA RULES - DO NOT VIOLATE]
-1. Output ONLY standard JSON object. NO markdown, NO text.
-2. The JSON MUST have EXACTLY TWO root keys: "intent" and "params".
-3. ABSOLUTELY DO NOT invent new keys. Use EXACTLY the keys shown in the Format below.
-4. "exact_match" is ONLY used when the user explicitly says "名为/叫" (named/titled).
-5. If the user asks about general concepts (e.g., "狮子座", "星座", "C++") or uses broad search verbs ("关于", "寻找"), YOU MUST use "semantic_search".
+<critical_rules>
+1. 输出必须是标准 JSON 对象，禁止使用 ```json 等 Markdown 包裹。
+2. JSON 必须且只能包含 "intent" 和 "params" 两个根键，不得发明新键。
+3. "exact_match"：仅当用户明确说出“名为/叫/名字是/文件名称为”某个具体文件时使用。
+4. "semantic_search"：常规提问、询问概念（如“狮子座”、“C++”、“归并排序”）、宽泛搜索（“关于...”、“寻找...”）时，必须使用此意图。
+5. 若用户提供“假设性回答”或“虚构答案”，请生成合理的 hyde_text（一段简短、信息丰富的假设性答案）。
+</critical_rules>
 
-[Intent Classification & Format]
-1. exact_match: {"intent": "exact_match", "params": {"filename": "exact_target_name_here"}}
-2. semantic_search: {"intent": "semantic_search", "params": {"keywords": ["word1", "word2"], "hyde_text": "hypothetical answer"}}
-3. direct_chat: {"intent": "direct_chat", "params": {"query": "user_input"}}
-4. document_insight: {"intent": "document_insight", "params": {"query": "specific_instruction"}}
-5. hybrid_compare: {"intent": "hybrid_compare", "params": {"target_filename": "specific_filename_if_any"}}
-6. list_cross_search: {"intent": "list_cross_search", "params": {"keywords": ["requirements"], "extract_target": "entity_type"}}
+<intent_format>
+- 精确匹配: {"intent": "exact_match", "params": {"filename": "目标名称"}}
+- 语义搜索: {"intent": "semantic_search", "params": {"keywords": ["核心词1", "核心词2"], "hyde_text": "假设性回答"}}
+- 日常闲聊: {"intent": "direct_chat", "params": {"query": "用户输入"}}
+- 文件洞察: {"intent": "document_insight", "params": {"query": "具体指令"}}
+- 混合对比: {"intent": "hybrid_compare", "params": {"target_filename": "目标文件名(如有) "}}
+- 名单交叉: {"intent": "list_cross_search", "params": {"keywords": ["附加要求"], "extract_target": "实体类型"}}
+</intent_format>
 
-[Few-Shot Examples]
-Status: 当前无附件
-Input: 找出名为“秋招简历”的文件
-Output: {"intent": "exact_match", "params": {"filename": "秋招简历"}}
+<few_shot_examples>
+状态: 当前无附件
+输入: 找出名为“秋招简历”的文件
+输出: {"intent": "exact_match", "params": {"filename": "秋招简历"}}
 
-Status: 当前无附件
-Input: 寻找有关星座、狮子座的资料
-Output: {"intent": "semantic_search", "params": {"keywords": ["星座", "狮子座"], "hyde_text": "狮子座是黄道十二宫之一，代表着热情与领导力。"}}
+状态: 当前无附件
+输入: 寻找有关星座、狮子座的资料
+输出: {"intent": "semantic_search", "params": {"keywords": ["星座", "狮子座"], "hyde_text": "狮子座是黄道十二宫之一，代表着热情与领导力。"}}
 
-Status: 当前无附件
-Input: 什么是归并排序？
-Output: {"intent": "direct_chat", "params": {"query": "什么是归并排序？"}}
+状态: 当前无附件
+输入: 什么是归并排序？
+输出: {"intent": "semantic_search", "params": {"keywords": ["归并排序"], "hyde_text": "归并排序是一种基于分治法的稳定排序算法，时间复杂度O(n log n)。"}}
 
-Status: 当前用户已上传附件：[竞品分析.pdf]
-Input: 总结一下这份文件
-Output: {"intent": "document_insight", "params": {"query": "总结一下这份文件"}}
+状态: 当前无附件
+输入: 你好
+输出: {"intent": "direct_chat", "params": {"query": "你好"}}
 
-Status: 当前用户已上传附件：[测试报告.txt]
-Input: 对比此文件与402851文件
-Output: {"intent": "hybrid_compare", "params": {"target_filename": "402851"}}
+状态: 当前用户已上传附件：[竞品分析.pdf]
+输入: 总结一下这份文件
+输出: {"intent": "document_insight", "params": {"query": "总结一下这份文件"}}
 
-[Execution]
-Status: %1
-Recent History:
+状态: 当前用户已上传附件：[测试报告.txt]
+输入: 对比此文件与402851文件
+输出: {"intent": "hybrid_compare", "params": {"target_filename": "402851"}}
+
+状态: 当前用户已上传附件：[员工名单.xlsx]
+输入: 找出其中技术部门的人
+输出: {"intent": "list_cross_search", "params": {"keywords": ["技术部门"], "extract_target": "人员"}}
+</few_shot_examples>
+
+<context>
+当前系统状态: %1
+最近对话历史:
 %3
-Input: %2
-Output: )";
+</context>
+
+<user_input>
+%2
+</user_input>
+
+请直接输出JSON（不要任何额外内容）：
+)";
 
 //2.精确匹配回复Prompt
 inline const QString promptForExact = R"(

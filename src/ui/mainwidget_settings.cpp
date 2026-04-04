@@ -25,36 +25,44 @@ void MainWidget::on_btnRebuildDB_clicked()
 {
     QString targetPath = ui->editScanPath->text();
     if (targetPath.isEmpty()) {
-        ui->labelStatus->setText(tr("🔴 请先设置扫描路径！"));
+        ui->labelStatus->setText("🔴 请先设置扫描路径！");
         return;
     }
 
-    ui->labelStatus->setText(tr("正在后台重建知识库..."));
-    ui->labelStatus->setStyleSheet("color: #409EFF;");
+    // 防误触禁用重建按钮
     ui->btnRebuildDB->setEnabled(false);
+
+    // 创建局部动态定时器
+    QTimer* dotTimer = new QTimer(this);
+    int* dotCount = new int(0); // 记录点的数量
+
+    connect(dotTimer, &QTimer::timeout, this, [this, dotCount]() {
+        *dotCount = (*dotCount + 1) % 5;
+        QString dots(*dotCount, '.');
+        ui->labelStatus->setText("🔵 正在后台重建知识库" + dots);
+    });
+    dotTimer->start(500);
 
     QPointer<MainWidget> safeThis = this;
 
-    //ThreadPool 进行异步处理
-    ThreadPool::getInstance().addTask([safeThis, targetPath]() {
-        try {
-            // 在后台线程运行耗时的建库流水线
-            BuildIndexTask* task = new BuildIndexTask(targetPath);
-            task->run(); // run 内部已对接 ExceptHandler 记录 VectorIndexError
-            delete task;
+    // 将任务推入线程池
+    ThreadPool::getInstance().addTask([safeThis, targetPath, dotTimer, dotCount]() {
+        // 后台执行耗时任务
+        BuildIndexTask* task = new BuildIndexTask(targetPath);
+        task->run();
+        delete task;
 
-            // 完成后切回主线程更新 UI
-            QMetaObject::invokeMethod(safeThis, [safeThis]() {
-                if (!safeThis) return;
-                safeThis->ui->labelStatus->setText(tr("知识库重建完成！"));
-                safeThis->ui->labelStatus->setStyleSheet("");
+        // 任务完成后，安全地跨线程通知主 UI 停止动画并更新状态
+        if (safeThis) {
+            QMetaObject::invokeMethod(safeThis, [safeThis, dotTimer, dotCount]() {
+                dotTimer->stop();
+                dotTimer->deleteLater(); // 销毁定时器释放内存
+                delete dotCount;         // 释放计数器内存
+
+                safeThis->ui->labelStatus->setText("🟢 知识库重建完毕！");
+                safeThis->ui->labelStatus->setStyleSheet("color: green;");
                 safeThis->ui->btnRebuildDB->setEnabled(true);
             }, Qt::QueuedConnection);
-
-        } catch (const std::exception& e) {
-            // 捕获任务创建阶段的异常
-            ExceptHandler::getInstance().reportError(ErrorCode::DbTransactionError,
-                                                     tr("后台建库启动失败: %1").arg(e.what()));
         }
     });
 }

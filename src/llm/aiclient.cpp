@@ -220,9 +220,18 @@ QNetworkReply* Aiclient::getConnect(const QString& prompt, const QString& api, b
     // 防止长文本 RAG 导致默认 2048 上下文截断
     json options;
     options["num_ctx"] = 4096;
-    j_payload["options"] = options;
 
-    if (requireJson) j_payload["format"] = "json";
+    // 根据任务类型动态调整模型温度
+    if (requireJson) {
+        j_payload["format"] = "json";
+        options["temperature"] = 0.0; // 保证 JSON 结构稳定
+        options["top_p"] = 0.1;       // 收拢词表候选范围
+    } else {
+        options["temperature"] = 0.3; // 闲聊或总结保留创造性（默认0.7太高了）
+        options["repeat_penalty"] = 1.1; // 强制惩罚复读机行为
+    }
+
+    j_payload["options"] = options;
 
     return networkManager->post(request, QByteArray::fromStdString(j_payload.dump()));
 }
@@ -246,9 +255,21 @@ QString Aiclient::generateBlocking(const QString& prompt, bool requireJson)
 
     json options;
     options["num_ctx"] = 4096;
-    j_payload["options"] = options;
 
-    if (requireJson) j_payload["format"] = "json";
+    if (requireJson) {
+        // 如果是 JSON 生成任务（意图路由、参数提取、规划），绝对锁死随机性！
+        options["temperature"] = 0.0;
+        options["top_p"] = 0.1;
+        // 防复读，轻微惩罚重复token
+        options["repeat_penalty"] = 1.1;
+        j_payload["format"] = "json"; // 强制 Ollama 进入 JSON 模式
+    } else {
+        // 普通对话或总结任务，保留一点点创造性，但依然不能太高
+        options["temperature"] = 0.3;
+        options["repeat_penalty"] = 1.1;
+    }
+
+    j_payload["options"] = options;
 
     QNetworkReply* reply = localManager.post(request, QByteArray::fromStdString(j_payload.dump()));
 
