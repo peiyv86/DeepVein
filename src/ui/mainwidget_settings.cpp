@@ -138,6 +138,7 @@ void MainWidget::refreshModels()
 void MainWidget::on_comboLanguage_currentIndexChanged(int index)
 {
     QString langCode = ui->comboLanguage->itemData(index).toString();
+    if (langCode.isEmpty()) return;
     QString qmFilePath = QString(":/i18n/lang_%1.qm").arg(langCode);
 
     if (m_translator.load(qmFilePath)) {

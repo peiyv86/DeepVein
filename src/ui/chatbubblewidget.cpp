@@ -28,20 +28,6 @@ ChatBubbleWidget::ChatBubbleWidget(const QString& text, bool isUser, QWidget *pa
         emit linkClicked(QUrl(link));
     });
 
-    // 为 QFrame 设计 QSS 圆角和背景
-    // QString frameStyle;
-    // if (isUser) {
-    //     // 用户绿
-    //     frameStyle = "QFrame { background-color: #95ec69; border-radius: 10px; }";
-
-    //     mainLayout->addStretch();
-    //     mainLayout->addWidget(bubbleFrame);
-    // } else {
-    //     // 将 AI 气泡去掉突兀的实线边框
-    //     frameStyle = "QFrame { background-color: #f0f4f8; border-radius: 10px; }";
-    //     mainLayout->addWidget(bubbleFrame);
-    //     mainLayout->addStretch();
-    // }
     QString frameStyle;
     if (isUser) {
         // 放弃微信绿

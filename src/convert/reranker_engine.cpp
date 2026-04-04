@@ -42,7 +42,7 @@ bool RerankerEngine::init(const QString& modelPath, const QString& tokenizerPath
 #endif
         m_memoryInfo = new Ort::MemoryInfo(Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault));
 
-        qDebug() << "模型与分词器加载成功";
+        qDebug() << "RerankerEngine:模型与分词器加载成功";
         return true;
 
     } catch (const std::exception& e) {

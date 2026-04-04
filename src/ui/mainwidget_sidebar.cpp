@@ -108,8 +108,6 @@ void MainWidget::on_btnToggleSidebar_clicked()
     animGroup->start(QAbstractAnimation::DeleteWhenStopped);
 }
 
-
-
 void MainWidget::refreshSidebar()
 {
     ui->listChatHistory->clear();

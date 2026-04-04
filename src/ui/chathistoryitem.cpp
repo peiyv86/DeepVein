@@ -4,7 +4,7 @@ ChatHistoryItem::ChatHistoryItem(int sessionId, const QString& title, const QStr
     : QWidget(parent), m_sessionId(sessionId)
 {
     QHBoxLayout *layouth = new QHBoxLayout(this);
-    QVBoxLayout *layoutv = new QVBoxLayout(this);
+    QVBoxLayout *layoutv = new QVBoxLayout();
     layouth->setContentsMargins(10, 5, 10, 5);
 
     m_lblTitle = new QLabel(title, this);

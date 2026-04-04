@@ -14,8 +14,6 @@ MainWidget::MainWidget(QWidget *parent) :
     setWindowIcon(QIcon(":/img/logo.png"));
 
     // 基础 UI 初始化
-    QFile qssFile(":/resources/app.qss");
-    this->setStyleSheet(QLatin1String(qssFile.readAll()));
     ui->stackedWidget->setCurrentIndex(0);
     ui->sidebarWidget->setMinimumWidth(250);
     ui->listWidgetChat->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel); // 平滑滚动

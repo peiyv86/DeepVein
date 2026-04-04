@@ -34,7 +34,7 @@ bool OcrEngine::init(const QString& modelsDir) {
         }
 
         m_ocrObj = ocr;
-        qDebug() << "RapidOCR引擎初始化";
+        qDebug() << "[RapidOCR] 引擎初始化";
         return true;
 
     } catch (const std::exception& e) {

@@ -14,7 +14,12 @@ int main(int argc, char *argv[])
 {
     QApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
     QApplication app(argc, argv);
-    qDebug() << "系统启动中...";
+    QFont globalFont = app.font();
+    globalFont.setFamily("Microsoft YaHei");
+    globalFont.setPointSize(10);
+    app.setFont(globalFont);
+
+    qDebug() << "-系统启动中...";
     // 路径初始化
     QString appPath = QApplication::applicationDirPath();
     // 数据存储路径
@@ -39,39 +44,39 @@ int main(int argc, char *argv[])
         qCritical() << "[FATAL]数据库初始化失败！程序终止。";
         return -1;
     }
-    qDebug() << "SQLite 数据库就绪";
+    qDebug() << "[SQLite] 数据库就绪";
     // 初始化向量库 (512维对应 BGE-large)
     QString vectorFile = vectorDir + "/hnsw_index.bin";
     if (!VectorDB::getInstance().init(vectorFile, 512, 10000)) {
         qCritical() << "[FATAL]向量数据库初始化失败！请检查系统内存。";
         return -1;
     }
-    qDebug() << "HNSW 向量索引库就绪";
+    qDebug() << "[HNSW] 向量索引库就绪";
     // 预加载 Embedding 粗排引擎
     if (!SemanticExtract::getInstance().init(modelPath, tokenizerPath)) {
         qWarning() << "[WARN]语义提取引擎加载失败，请检查模型路径：";
         qWarning() << "   -> " << modelPath;
         // 不强制退出，允许无模型状态下纯靠 SQLite 检索
     } else {
-        qDebug() << "BGE 语义提取引擎已载入显存/内存";
+        qDebug() << "[BGE] 语义提取引擎已载入";
     }
     // 预加载 Reranker 精排引擎
     if (!RerankerEngine::getInstance().init(rerankModelPath, rerankTokenizerPath)) {
-        qWarning() << "[WARN] 精排交叉验证引擎加载失败，请检查模型路径：";
+        qWarning() << "[WARN]精排交叉验证引擎加载失败，请检查模型路径：";
         qWarning() << "   -> " << rerankModelPath;
     } else {
-        qDebug() << "BGE-Reranker 精排引擎已载入显存/内存";
+        qDebug() << "[BGE-Reranker] 精排引擎已载入";
     }
     // 唤醒 OCR 光学字符识别引擎
     if (!OcrEngine::getInstance().init(ocrModelsPath)) {
         qWarning() << "[WARN]OCR 引擎加载失败！图片解析功能将受限。请检查目录：";
         qWarning() << "   -> " << ocrModelsPath;
     } else {
-        qDebug() << "PP-OCR 识别引擎就绪";
+        qDebug() << "[PP-OCR] 识别引擎就绪";
     }
     // 大模型接口配置
     Aiclient::getInstance().setPORT("11434");
-    qDebug() << "Ollama API 端口已挂载 (11434)";
+    qDebug() << "[Ollama-API] 端口已挂载 (11434)";
     // 加载 QSS 样式表
     QFile file(":/resources/app.qss");
     if (file.open(QFile::ReadOnly | QFile::Text)) {
