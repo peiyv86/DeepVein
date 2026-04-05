@@ -1,8 +1,8 @@
 
 * {
     font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
-    font-size: 10pt; /* 只有字体用 pt，10pt 最接近原来的 14px */
-    color: #334155; /* 柔和深灰蓝 */
+    font-size: 10pt;
+    color: #334155;
 }
 
 QWidget#MainWidget {
@@ -44,15 +44,15 @@ QListWidget#listChatHistory::item:hover {
 }
 
 QListWidget#listChatHistory::item:selected {
-    background-color: #FFF6F3;
+    background-color: #F0F5FF;
     color: #1E293B;
-    border-left: 4px solid #DE7B52; /* 品牌橙侧条 */
+    border-left: 4px solid #2E56B1; /* Logo 钻头主蓝色 */
     font-weight: bold;
 }
 
 QListWidget#listWidgetChat::viewport {
     background: transparent;
-    border-radius: 12px; /* 必须与父级 QListWidget 一致 */
+    border-radius: 12px;
 }
 
 
@@ -64,13 +64,14 @@ QTextEdit#textEditInput {
 }
 
 QTextEdit#textEditInput:focus {
-    border: 1px solid #DE7B52; /* 聚焦时使用柔和橙 */
-    background-color: #FFFCFA;
+    border: 1px solid #4A8CFF; /* Logo 晶体发光蓝 */
+    background-color: #FFFFFF;
 }
 
+QPushButton#btnBackToChat,
 QPushButton#btnNewChat,
 QPushButton#btnSend {
-    background-color: #DE7B52;
+    background-color: #2E56B1; /* Logo 钻头主蓝色 */
     color: #FFFFFF;
     border: none;
     border-radius: 8px;
@@ -78,17 +79,19 @@ QPushButton#btnSend {
     padding: 10px 18px;
 }
 
-
+QPushButton#btnBackToChat,
 QPushButton#btnNewChat:hover,
 QPushButton#btnSend:hover {
-    background-color: #CD6D46;
+    background-color: #4A8CFF;
 }
 
+QPushButton#btnBackToChat,
 QPushButton#btnNewChat:pressed,
 QPushButton#btnSend:pressed {
-    background-color: #B55A35;
+    background-color: #1E3A8A;
 }
 
+QPushButton#btnBackToChat,
 QPushButton#btnToggleSidebar,
 QPushButton#btnUploadFile,
 QPushButton#btn_DeleteFile {
@@ -99,14 +102,20 @@ QPushButton#btn_DeleteFile {
     padding: 10px 18px;
 }
 
+QPushButton#btnSetPort:hover,
+QPushButton#btnRefreshModels:hover,
+QPushButton#btnBrowseHistoryPath:hover,
+QPushButton#btnBrowseScanPath:hover,
+QPushButton#btnBrowseVectorPath:hover,
 QPushButton#btnToggleSidebar:hover,
 QPushButton#btnSettings:hover,
+QPushButton#btnBackToChat:hover,
+QPushButton#btnRebuildDB:hover,
 QPushButton#btnUploadFile:hover,
-QPushButton#btnSettings:hover,
 QPushButton#btn_DeleteFile:hover {
-    background-color: #F1F5F9;
+    background-color: #F0F5FF; /* 悬停时透出浅浅的科技蓝 */
     border-radius: 6px;
-    color: #0F172A;
+    color: #2E56B1;
 }
 
 QScrollBar:vertical {
@@ -122,7 +131,9 @@ QScrollBar::handle:vertical {
     border-radius: 3px;
 }
 
-QScrollBar::handle:vertical:hover { background: #94A3B8; }
+QScrollBar::handle:vertical:hover {
+    background: #94A3B8;
+}
 
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }
 QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: transparent; }
@@ -139,6 +150,6 @@ QGroupBox::title {
     subcontrol-origin: margin;
     left: 15px;
     padding: 0 8px;
-    color: #2C3E50;
+    color: #2E56B1;
     font-weight: bold;
 }

@@ -10,12 +10,12 @@ ChatHistoryItem::ChatHistoryItem(int sessionId, const QString& title, const QStr
     m_lblTitle = new QLabel(title, this);
     m_lblTitle->setStyleSheet("font-weight: bold; font-size: 14px;");
 
-    // 既然已经是 QString 了，直接传给 QLabel 即可，不需要 QDateTime 转换了！
+    // 既然已经是 QString 了，直接传给 QLabel 即可，不需要 QDateTime 转换
     m_lblTime = new QLabel(createTime, this);
     m_lblTime->setStyleSheet("color: gray; font-size: 11px;");
 
-    m_btnDelete = new QPushButton("×", this);
-    m_btnDelete->setFixedSize(40, 40);
+    m_btnDelete = new QPushButton("🗑️", this);
+    m_btnDelete->setFixedSize(30, 30);
     m_btnDelete->setCursor(Qt::PointingHandCursor);
     m_btnDelete->setStyleSheet("QPushButton { border: none; background-color: transparent; color: #94A3B8; font-weight: bold; font-size: 16px; }"
                                "QPushButton:hover { background-color: #FEE2E2; color: #EF4444; border-radius: 6px; }");
