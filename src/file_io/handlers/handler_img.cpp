@@ -45,7 +45,7 @@ FileTxt HandlerImg::extractText(const QString& filePath)
     // 5. 判断识别结果并组装返回数据
     if (!extractedText.isEmpty()) {
         result.Text = extractedText.trimmed();
-        result.isOpen = true; // 提取成功，放行标记！
+        result.isOpen = true; // 提取成功，放行标记
         qDebug() << "图片 OCR 提取成功，共获取" << result.Text.length() << "个字符。";
     } else {
         // 如果引擎返回空，说明可能是一张纯风景图或没有清晰文字的图

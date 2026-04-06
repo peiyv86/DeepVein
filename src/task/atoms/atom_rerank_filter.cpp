@@ -70,7 +70,7 @@ QList<DocChunk> AtomRerankFilter::execute(const QString& originalQuery,
         seenParents.insert(chunk.parentId);
 
         // 修复：只有当 parentText 确有内容时才进行替换
-        // 否则保留原本命中高分的子切片内容 (pureText)！
+        // 否则保留原本命中高分的子切片内容 (pureText)
         if (!chunk.parentText.trimmed().isEmpty()) {
             chunk.pureText = std::move(chunk.parentText);
         }

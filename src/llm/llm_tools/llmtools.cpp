@@ -9,95 +9,95 @@ namespace LlmTools {
 /**
  * @brief 解析大模型路由返回的 JSON，提取意图与关键词
  */
-ParsedIntent parsedJson(const nlohmann::json& j_res)
+ParsedIntent parsedJson(const nlohmann::json& j)
 {
     ParsedIntent out;
-    out.intentType = IntentType::SemanticSearch; // 默认值
+    out.intentType = IntentType::SemanticSearch; //都找不到设为默认
 
     try {
-        std::string rawJsonStr;
-        // 1. 多字段提取原始字符串 (兼容不同模型的输出习惯)
-        if (j_res.contains("response") && j_res["response"].is_string()) {
-            rawJsonStr = j_res["response"].get<std::string>();
+        std::string contentJ;
+        //两个字段都可能有内容
+        if (j.contains("response") && j["response"].is_string()) {
+            contentJ = j["response"].get<std::string>();
         }
-        else if (j_res.contains("message") && j_res["message"].is_object()) {
-            auto msg = j_res["message"];
+        else if (j.contains("message") && j["message"].is_object()) {
+            auto msg = j["message"];
             if (msg.contains("content") && msg["content"].is_string()) {
-                rawJsonStr = msg["content"].get<std::string>();
+                contentJ = msg["content"].get<std::string>();
             }
         }
 
-        if (rawJsonStr.empty()) {
+        if (contentJ.empty()) {
             ExceptHandler::getInstance().reportError(ErrorCode::LlmParseFailed, "LLM 返回的 JSON 核心字段为空");
             return out;
         }
 
-        QString cleanStr = QString::fromStdString(rawJsonStr).trimmed();
+        QString cleanJ = QString::fromStdString(contentJ).trimmed();
 
-        // 2. 剥离推理思维链 <think>
-        int thinkEnd = cleanStr.indexOf("</think>");
+        // 剥离think
+        int thinkEnd = cleanJ.indexOf("</think>");
         if (thinkEnd != -1) {
-            cleanStr = cleanStr.mid(thinkEnd + 8).trimmed();
+            cleanJ = cleanJ.mid(thinkEnd + 8).trimmed();
         }
 
-        // 3. 物理提取 {} 结构，免疫 Markdown 标记
-        int jsonStart = cleanStr.indexOf('{');
-        int jsonEnd = cleanStr.lastIndexOf('}');
+        // 提取{}结构，免疫 Markdown 标记
+        int jStart = cleanJ.indexOf('{');
+        int jEnd = cleanJ.lastIndexOf('}');
 
         // 找到了开头但没找到结尾（截断情况）
-        if (jsonStart != -1 && jsonEnd == -1) {
-            cleanStr = cleanStr.mid(jsonStart); // 从开头截取到最后
+        if (jStart != -1 && jEnd == -1) {
+            cleanJ = cleanJ.mid(jStart); // 从开头截取到最后
             ExceptHandler::getInstance().reportError(ErrorCode::LlmParseFailed, "警告：检测到 JSON 可能被截断，尝试暴力修补");
         }
-        else if (jsonStart != -1 && jsonEnd != -1 && jsonEnd >= jsonStart) {
-            cleanStr = cleanStr.mid(jsonStart, jsonEnd - jsonStart + 1);
+        else if (jStart != -1 && jEnd != -1 && jEnd >= jStart) {
+            cleanJ = cleanJ.mid(jStart, jEnd - jStart + 1);
         } else {
             ExceptHandler::getInstance().reportError(ErrorCode::LlmParseFailed, "无法在大模型回复中定位到有效 JSON 结构");
             return out;
         }
 
-        // [调试探针] 记录清洗后的数据
-        qDebug() << "[探针1]路由JSON待解析=\n" << cleanStr;
+        //记录清洗后的数据
+        qDebug() << "[1]路由JSON待解析=\n" << cleanJ;
 
-        nlohmann::json j_routing;
+        nlohmann::json txtJ;
         try {
-            j_routing = nlohmann::json::parse(cleanStr.toStdString());
+            txtJ = nlohmann::json::parse(cleanJ.toStdString());
         } catch (const nlohmann::json::parse_error& e) {
             qWarning() << "标准 JSON 解析失败，启动暴力括号补全机制...";
 
-            // 补齐丢失的右括号
-            int openBraces = cleanStr.count('{');
-            int closeBraces = cleanStr.count('}');
-            int openBrackets = cleanStr.count('[');
-            int closeBrackets = cleanStr.count(']');
-            int quotes = cleanStr.count('"');
+            //补齐丢失的右括号
+            int openBraces = cleanJ.count('{');
+            int closeBraces = cleanJ.count('}');
+            int openBrackets = cleanJ.count('[');
+            int closeBrackets = cleanJ.count(']');
+            int quotes = cleanJ.count('"');
 
-            // 如果引号是单数，说明字符串没闭合，补一个引号
-            if (quotes % 2 != 0) cleanStr += "\"";
+            //如果引号是单数说明字符串没闭合-补一个引号
+            if (quotes % 2 != 0) cleanJ += "\"";
 
-            // 补齐数组和对象括号 (注意顺序，通常先闭合数组再闭合对象)
-            while (closeBrackets < openBrackets) { cleanStr += "]"; closeBrackets++; }
-            while (closeBraces < openBraces) { cleanStr += "}"; closeBraces++; }
+            // 补齐数组和对象括号 先闭合数组再闭合对象
+            while (closeBrackets < openBrackets) { cleanJ += "]"; closeBrackets++; }
+            while (closeBraces < openBraces) { cleanJ += "}"; closeBraces++; }
 
             try {
-                j_routing = nlohmann::json::parse(cleanStr.toStdString());
-                qDebug() << "暴力补全成功！修复后的JSON:\n" << cleanStr;
+                txtJ = nlohmann::json::parse(cleanJ.toStdString());
+                qDebug() << "补全成功-修复后的JSON:\n" << cleanJ;
             } catch (...) {
-                ExceptHandler::getInstance().reportError(ErrorCode::LlmParseFailed, "JSON 彻底破损，无法修补，已放弃");
-                return out; // 返回默认的 semantic_search 意图
+                ExceptHandler::getInstance().reportError(ErrorCode::LlmParseFailed, "JSON无法修补");
+                return out;
             }
         }
 
-        // 4. 安全提取意图 (Intent)
+        //提取意图
         QString intentStr = "semantic_search";
-        if (j_routing.contains("intent") && j_routing["intent"].is_string()) {
-            intentStr = QString::fromStdString(j_routing["intent"].get<std::string>());
+        if (txtJ.contains("intent") && txtJ["intent"].is_string()) {
+            intentStr = QString::fromStdString(txtJ["intent"].get<std::string>());
         }
         out.intentType = getIntentEnum(intentStr);
 
-        // 5. 参数解析 (Params)
-        if (j_routing.contains("params") && j_routing["params"].is_object()) {
-            auto params = j_routing["params"];
+        //参数解析
+        if (txtJ.contains("params") && txtJ["params"].is_object()) {
+            auto params = txtJ["params"];
 
             // 修复只要有 filename 或 target_filename，就优先提取为 targetFileName
             if (params.contains("filename") && params["filename"].is_string()) {
@@ -124,10 +124,10 @@ ParsedIntent parsedJson(const nlohmann::json& j_res)
             }
         }
 
-        // 6. 兜底API幻觉处理
+        //API幻觉处理
         else if (intentStr == "semantic_search") {
             ExceptHandler::getInstance().reportError(ErrorCode::LlmParseFailed, "警告：路由 JSON 丢失 params 字段，启动强制提取兜底");
-            for (auto it = j_routing.begin(); it != j_routing.end(); ++it) {
+            for (auto it = txtJ.begin(); it != txtJ.end(); ++it) {
                 if (it.value().is_string()) {
                     QString val = QString::fromStdString(it.value().get<std::string>());
                     if (!val.contains("http") && val.length() < 20) out.keywords << val;
@@ -135,7 +135,7 @@ ParsedIntent parsedJson(const nlohmann::json& j_res)
             }
         }
 
-        qDebug() << "[探针2]最终关键词清单=" << out.keywords;
+        qDebug() << "[2]最终关键词清单=" << out.keywords;
 
     } catch (const std::exception& e) {
         ExceptHandler::getInstance().reportError(ErrorCode::LlmParseFailed, QString("ParsedJson 异常: ") + e.what());
@@ -191,13 +191,11 @@ QString generatePrompt(const TaskResult& result, const QString& cmd)
     {
         QString prompt = "你是一个专业的数据分析专家和文档助手。用户已经授权你处理以下这份文件，请你作为助手提供信息服务。\n\n";
         prompt += "### 待处理文档内容：\n";
-        prompt += "----------------------\n";
         if (!result.slices.empty()) {
             prompt += result.slices[0].pureText;
         } else {
             prompt += "(警告：未提取到有效文本)";
         }
-        prompt += "\n----------------------\n\n";
         prompt += "### 用户具体指令：\n" + cmd + "\n\n";
         prompt += "请根据上述文档内容，给出专业、准确且客观的回答：";
 
@@ -223,7 +221,7 @@ QString generatePrompt(const TaskResult& result, const QString& cmd)
 }
 
 /**
- * @brief 解析流式返回的 JSON 行
+ * @brief 解析流式返回的 JSON 行（引入状态机，精准处理推理模型）
  */
 QList<StreamChunk> processStreamLine(const QByteArray& line, StreamState& state) {
     QList<StreamChunk> chunks;
@@ -231,64 +229,90 @@ QList<StreamChunk> processStreamLine(const QByteArray& line, StreamState& state)
 
     try {
         auto j = nlohmann::json::parse(line.toStdString());
+
+        QString responseText;
         if (j.contains("response") && !j["response"].is_null()) {
-            QString text = QString::fromStdString(j["response"].get<std::string>());
-            if (!text.isEmpty()) chunks.append({text, ChunkType::NormalText});
+            responseText = QString::fromStdString(j["response"].get<std::string>());
+        }
+
+        QString thinkingText;
+        if (j.contains("thinking") && !j["thinking"].is_null()) {
+            thinkingText = QString::fromStdString(j["thinking"].get<std::string>());
+        }
+
+        // 状态机切分
+        if (!thinkingText.isEmpty()) {
+            if (!state.isThinking) {
+                // 第一次进入思考状态，补上唯一的开标签
+                state.isThinking = true;
+                chunks.append({"<think>" + thinkingText, ChunkType::NormalText});
+            } else {
+                // 持续思考中-直接追加纯文本，不包标签
+                chunks.append({thinkingText, ChunkType::NormalText});
+            }
+        } else if (!responseText.isEmpty()) {
+            if (state.isThinking) {
+                // 状态-思考结束，开始输出正文，补上唯一的闭合标签,换行
+                state.isThinking = false;
+                chunks.append({"</think>\n\n" + responseText, ChunkType::NormalText});
+            } else {
+                // 持续输出正文-直接追加
+                chunks.append({responseText, ChunkType::NormalText});
+            }
         }
     } catch (...) {
-        // 流式解析通常会有断句，解析失败不报告错误
+        //忽略
     }
     return chunks;
 }
 
 /**
- * @brief 解析 Agent 工作流计划 (内存优化版)
+ * @brief 解析 Agent 工作流计划
  */
-QList<WorkflowStep> parseWorkflowPlan(const QString& rawJsonStr)
+QList<WorkflowStep> parseWorkflowPlan(const QString& contentJ)
 {
     QList<WorkflowStep> plan;
-    if (rawJsonStr.isEmpty()) return plan;
+    if (contentJ.isEmpty()) return plan;
 
     try {
-        // 1. 零拷贝清洗头尾
-        QStringView view(rawJsonStr);
+        //零拷贝清洗头尾
+        QStringView view(contentJ);
         view = view.trimmed();
         if (view.startsWith(QLatin1String("```json"))) view = view.mid(7);
         else if (view.startsWith(QLatin1String("```"))) view = view.mid(3);
         if (view.endsWith(QLatin1String("```"))) view = view.chopped(3);
 
-        // 寻找边界
+        //寻找边界
         int start = view.indexOf('[');
         int end = view.lastIndexOf(']');
         if (start != -1 && end != -1 && end >= start) {
             view = view.mid(start, end - start + 1);
         }
 
-        // 2. 指针级 JSON 解析
-        QByteArray utf8Bytes = view.toUtf8();
-        nlohmann::json j_root = nlohmann::json::parse(utf8Bytes.constData(), utf8Bytes.constData() + utf8Bytes.size());
+        //JSON指针解析
+        QByteArray utf = view.toUtf8();
+        nlohmann::json rootJ = nlohmann::json::parse(utf.constData(), utf.constData() + utf.size());
 
-        nlohmann::json j_array;
-        if (j_root.is_array()) j_array = std::move(j_root);
-        else if (j_root.is_object()) {
-            for (auto it = j_root.begin(); it != j_root.end(); ++it) {
-                if (it.value().is_array()) { j_array = std::move(it.value()); break; }
+        nlohmann::json arrayJ;
+        if (rootJ.is_array()) arrayJ = std::move(rootJ);
+        else if (rootJ.is_object()) {
+            for (auto it = rootJ.begin(); it != rootJ.end(); ++it) {
+                if (it.value().is_array()) { arrayJ = std::move(it.value()); break; }
             }
         }
 
-        if (!j_array.is_array()) throw std::runtime_error("JSON 结构中不包含工作流数组");
+        if (!arrayJ.is_array()) throw std::runtime_error("JSON 结构中不包含工作流数组");
 
-        plan.reserve(j_array.size());
-        for (const auto& j_step : j_array) {
-            if (!j_step.is_object()) continue;
-
+        plan.reserve(arrayJ.size());
+        for (const auto& stepJ : arrayJ) {
+            if (!stepJ.is_object()) continue;
             WorkflowStep step;
-            if (j_step.contains("stepId")) step.stepId = j_step["stepId"].get<int>();
-            if (j_step.contains("actionName")) step.actionName = QString::fromStdString(j_step["actionName"].get<std::string>());
-            if (j_step.contains("description")) step.description = QString::fromStdString(j_step["description"].get<std::string>());
+            if (stepJ.contains("stepId")) step.stepId = stepJ["stepId"].get<int>();
+            if (stepJ.contains("actionName")) step.actionName = QString::fromStdString(stepJ["actionName"].get<std::string>());
+            if (stepJ.contains("description")) step.description = QString::fromStdString(stepJ["description"].get<std::string>());
 
-            if (j_step.contains("params") && j_step["params"].is_object()) {
-                for (auto it = j_step["params"].begin(); it != j_step["params"].end(); ++it) {
+            if (stepJ.contains("params") && stepJ["params"].is_object()) {
+                for (auto it = stepJ["params"].begin(); it != stepJ["params"].end(); ++it) {
                     if (it.value().is_string()) {
                         step.params.insert(QString::fromStdString(it.key()), QString::fromStdString(it.value().get<std::string>()));
                     }

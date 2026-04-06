@@ -7,13 +7,13 @@
  */
 void MainWidget::on_btnSettings_clicked()
 {
-    if (settingChanger) {
+    if (setChanger) {
         ui->stackedWidget->setCurrentIndex(0);
-        settingChanger = false;
+        setChanger = false;
         return;
     }
     ui->stackedWidget->setCurrentIndex(1);
-    settingChanger = true;
+    setChanger = true;
     qDebug() << "进入设置页面";
 }
 
@@ -34,12 +34,13 @@ void MainWidget::on_btnRebuildDB_clicked()
 
     // 创建局部动态定时器
     QTimer* dotTimer = new QTimer(this);
-    int* dotCount = new int(0); // 记录点的数量
+    std::shared_ptr<int> dotCount = std::make_shared<int>(0);
 
     connect(dotTimer, &QTimer::timeout, this, [this, dotCount]() {
         *dotCount = (*dotCount + 1) % 5;
         QString dots(*dotCount, '.');
         ui->labelStatus->setText("🔵 正在后台重建知识库" + dots);
+        ui->labelStatus->setStyleSheet("color: blue;");
     });
     dotTimer->start(500);
 
@@ -57,9 +58,9 @@ void MainWidget::on_btnRebuildDB_clicked()
             QMetaObject::invokeMethod(safeThis, [safeThis, dotTimer, dotCount]() {
                 dotTimer->stop();
                 dotTimer->deleteLater(); // 销毁定时器释放内存
-                delete dotCount;         // 释放计数器内存
+                //delete dotCount;         // 释放计数器内存
 
-                safeThis->ui->labelStatus->setText("🟢 知识库重建完毕！");
+                safeThis->ui->labelStatus->setText("🟢 知识库重建完毕");
                 safeThis->ui->labelStatus->setStyleSheet("color: green;");
                 safeThis->ui->btnRebuildDB->setEnabled(true);
             }, Qt::QueuedConnection);
@@ -115,19 +116,19 @@ void MainWidget::refreshModels()
     ui->comboModel->clear();
 
     if (localModels.isEmpty()) {
-        ui->comboModel->addItem(tr("未检测到模型 (请启动 Ollama)"));
+        ui->comboModel->addItem(tr("未检测到模型"));
         ui->comboModel->setEnabled(false);
         ui->labelStatus->setText(tr("🔴 等待 Ollama 启动..."));
 
         // 记录到异常处理器，方便排查连接问题
         ExceptHandler::getInstance().reportError(ErrorCode::NetworkTimeout, "无法连接到 Ollama 服务，请检查后端状态。");
 
-        if (!ollamaCheckTimer->isActive()) ollamaCheckTimer->start(5000);
+        if (!llmCheaker->isActive()) llmCheaker->start(5000);
     } else {
         ui->comboModel->addItems(localModels);
         ui->comboModel->setEnabled(true);
         ui->labelStatus->setText(tr("🟢 模型已就绪"));
-        if (ollamaCheckTimer->isActive()) ollamaCheckTimer->stop();
+        if (llmCheaker->isActive()) llmCheaker->stop();
     }
     ui->btnRefreshModels->setEnabled(true);
 }
@@ -141,8 +142,8 @@ void MainWidget::on_comboLanguage_currentIndexChanged(int index)
     if (langCode.isEmpty()) return;
     QString qmFilePath = QString(":/i18n/lang_%1.qm").arg(langCode);
 
-    if (m_translator.load(qmFilePath)) {
-        qApp->installTranslator(&m_translator);
+    if (_trs.load(qmFilePath)) {
+        qApp->installTranslator(&_trs);
         qDebug() << "语言包加载成功:" << qmFilePath;
     } else {
         ExceptHandler::getInstance().reportError(ErrorCode::FileNotFound,
@@ -189,7 +190,7 @@ void MainWidget::changeEvent(QEvent *event)
         ui->comboModel->blockSignals(false);
         ui->comboLanguage->blockSignals(false);
 
-        retranslateDynamicUi();
+        trsUi();
     }
     QWidget::changeEvent(event);
 }
@@ -197,13 +198,13 @@ void MainWidget::changeEvent(QEvent *event)
 /**
  * @brief 刷新代码中手写的动态 UI 文本
  */
-void MainWidget::retranslateDynamicUi()
+void MainWidget::trsUi()
 {
-    if (m_uploadedFilePath.isEmpty()) {
+    if (_uploadedFilePath.isEmpty()) {
         ui->labelStatus->setText(tr("🟢 模型已就绪"));
     } else {
-        ui->labelStatus->setText(tr("已挂载附件: ") + QFileInfo(m_uploadedFilePath).fileName());
+        ui->labelStatus->setText(tr("已挂载附件: ") + QFileInfo(_uploadedFilePath).fileName());
     }
 
-    ui->btnToggleSidebar->setText(m_isSidebarExpanded ? "<<<" : ">");
+    ui->btnToggleSidebar->setText(_isExpand ? "<<<" : ">");
 }

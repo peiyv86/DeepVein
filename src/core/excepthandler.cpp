@@ -16,7 +16,7 @@ ExceptHandler::ExceptHandler(QObject *parent) : QObject(parent)
     }
 
     // 设置日志文件路径
-    m_logFilePath = logDir.filePath("pdan_error.log");
+    _logFilePath = logDir.filePath("pdan_error.log");
 }
 
 ExceptHandler::~ExceptHandler()
@@ -52,8 +52,8 @@ void ExceptHandler::reportError(ErrorCode code, const QString& message)
     // 线程安全地写入本地日志文件
     {
         // 加锁即使 ThreadPool 中有 10 个线程同时崩溃，日志也能按顺序安全写入
-        QMutexLocker locker(&m_mutex);
-        QFile file(m_logFilePath);
+        QMutexLocker locker(&_mutex);
+        QFile file(_logFilePath);
 
         // 以追加和纯文本模式打开文件
         if (file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
@@ -61,7 +61,7 @@ void ExceptHandler::reportError(ErrorCode code, const QString& message)
             out << logMessage << "\n";
             file.close();
         } else {
-            qWarning() << "无法打开日志文件写入异常信息:" << m_logFilePath;
+            qWarning() << "无法打开日志文件写入异常信息:" << _logFilePath;
         }
     }
 

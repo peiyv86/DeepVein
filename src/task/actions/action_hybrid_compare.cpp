@@ -30,7 +30,7 @@ TaskResult ActionHybridCompare::execute(const ParsedIntent& intent)
 
     // 核心双轨制路由
     if (!realTargetFile.isEmpty()) {
-        // 轨道 A：用户明确指出了目标文件！
+        // 轨道 A：用户明确指出了目标文件
         qDebug() << "进入跨文件精准对比，目标文件：" << realTargetFile;
         QList<DocChunk> fileChunks = AtomExactSearch::execute(realTargetFile);
 

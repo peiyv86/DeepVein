@@ -12,7 +12,6 @@ FileTxt HandlerOther::extractText(const QString& filePath)
     result.isOpen = false;
     result.Text = "";
 
-    //ExceptHandler::getInstance().reportError(ErrorCode::Success, "跳过不支持的文件格式: " + filePath);
     return result;
 }
 

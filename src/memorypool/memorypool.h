@@ -59,7 +59,7 @@ public:
         Chunk* chunk = freeList;
         freeList = freeList->next;
 
-        // 定位 Placement new：在已经分配好的内存地址上，原地调用 T 的构造函数！
+        // 定位 Placement new：在已经分配好的内存地址上，原地调用 T 的构造函数
         return new (&chunk->payload) T(std::forward<Args>(args)...);
     }
 

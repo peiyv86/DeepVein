@@ -8,7 +8,7 @@
 
 class TaskFactory {
 public:
-    // 静态工厂方法，返回独占智能指针，自动管理内存生命周期
+    //返回智能指针，自动管理内存生命周期
     static std::unique_ptr<ITaskRouter> createRouter(IntentType intentType);
 };
 

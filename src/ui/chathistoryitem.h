@@ -1,5 +1,5 @@
-#ifndef CHATHISTORYITEM_H
-#define CHATHISTORYITEM_H
+#ifndef CHATHISTORYITE_H
+#define CHATHISTORYITE_H
 
 #include <QWidget>
 #include <QLabel>
@@ -24,12 +24,12 @@ public:
 
 signals:
     void deleteRequested(int sessionId);
-    void renameRequested(int sessionId, const QString& newTitle);  // 新增重命名
+    void renameRequested(int sessionId, const QString& newTitle);
 private:
-    int m_sessionId;
-    QLabel *m_lblTitle;
-    QLabel *m_lblTime;
-    QPushButton *m_btnDelete;
+    int _sessionId;
+    QLabel *_lbTitle;
+    QLabel *_lbTime;
+    QPushButton *_btnDelete;
 };
 
-#endif // CHATHISTORYITEM_H
+#endif // CHATHISTORYITE_H

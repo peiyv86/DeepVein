@@ -8,7 +8,6 @@ thread_local MemoryPool<DocChunk> tl_pool(1000);
 
 void BuildIndexTask::run() {
     try {
-        qDebug() << "========================================";
         qDebug() << "开始后台构建知识库流水线 (父子切片模式)...";
         qDebug() << "扫描目录:" << m_dirPath;
 
@@ -61,12 +60,12 @@ void BuildIndexTask::run() {
                             return SemanticExtract::getInstance().getEmbedding(text);
                         });
 
-                        // 🚀 核心修复：移除 std::move(*child) ！！
+                        // 修复：移除 std::move(*child)
                         // 强制进行深拷贝，让 PendingTask 拥有自己独立的数据备份。
-                        // 这样即使底层内存池的指针被瞬间回收复用，也绝对不会污染已经排队的任务！
+                        // 这样即使底层内存池的指针被瞬间回收复用，也绝对不会污染已经排队的任务
                         DocChunk safeCopyChunk = *child;
 
-                        // 2. 🚀 加上 std::move()，把这份安全的拷贝所有权转移进队列
+                        // 加上 std::move()，把这份安全的拷贝所有权转移进队列
                         pendingTasks.emplace_back(std::move(safeCopyChunk), parentId, std::move(future));
                         // 数据已经安全拷贝，现在可以放心地交还给内存池了
                         tl_pool.deallocate(child);
@@ -113,11 +112,11 @@ void BuildIndexTask::run() {
         dm.commitTransaction();
 
         vdb.saveIndex();
-        qDebug() << "知识库构建任务圆满完成！";
+        qDebug() << "知识库构建任务完成";
 
     } catch (const std::exception& e) {
         qCritical() << "任务流水线发生致命错误:" << e.what();
     } catch (...) {
-        qCritical() << "任务流水线发生未知异常！";
+        qCritical() << "任务流水线发生未知异常";
     }
 }

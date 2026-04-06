@@ -6,7 +6,7 @@ TaskResult ActionFileAnalysis::execute(const ParsedIntent& intent)
     result.aim = intent;
     result.success = true;
 
-    // 1. 异常拦截：如果因为某种不可预期的 Bug 导致没拿到文件文本
+    // 异常拦截：如果因为某种不可预期的 Bug 导致没拿到文件文本
     if (intent.uploadedFileText.isEmpty()) {
         result.directUIResponse = "未能读取到附件内容，可能是文件为空或解析失败。";
         return result;
@@ -14,9 +14,9 @@ TaskResult ActionFileAnalysis::execute(const ParsedIntent& intent)
 
     qDebug() << "执行单文件洞察 (DocumentInsight)，目标附件：" << intent.uploadedFileName;
 
-    // 2. 伪造一个完美的满分命中切片
+    // 伪造满分命中切片
     DocChunk attachmentChunk;
-    attachmentChunk.chunkId = -1; // -1 是一个特殊标记，代表这是临时文件，不在 SQLite 库中
+    attachmentChunk.chunkId = -1; // -1代表这是临时文件，不在 SQLite 库中
     attachmentChunk.fileName = intent.uploadedFileName;
     attachmentChunk.filePath = intent.uploadedFilePath;
 
@@ -25,7 +25,7 @@ TaskResult ActionFileAnalysis::execute(const ParsedIntent& intent)
     attachmentChunk.pureText = intent.uploadedFileText;
     attachmentChunk.score = 1.0f; // 满分置顶
 
-    // 3. 移入切片集合
+    // 移入切片集合
     result.slices.emplace_back(std::move(attachmentChunk));
 
     return result;

@@ -56,7 +56,7 @@ QStringList AtomExtractEntities::execute(const QString& sourceText, const QStrin
         }
         else if (j_root.is_object()) {
             // 情况 B：自作聪明的模型，返回了 {"人名": ["狮子座", "双鱼座"]}
-            // 我们直接遍历这个对象的所有 value，只要找到 Array 就提取里面的字符串！
+            // 我们直接遍历这个对象的所有 value，只要找到 Array 就提取里面的字符串
             for (auto it = j_root.begin(); it != j_root.end(); ++it) {
                 if (it.value().is_array()) {
                     for (const auto& item : it.value()) {

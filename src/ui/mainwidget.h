@@ -1,9 +1,7 @@
 #ifndef MAINWIDGET_H
 #define MAINWIDGET_H
 
-// ==========================================
 // 1. Qt Core & Base
-// ==========================================
 #include <QWidget>
 #include <QEvent>
 #include <QTimer>
@@ -16,33 +14,25 @@
 #include <QPropertyAnimation>
 #include <QParallelAnimationGroup>
 
-// ==========================================
 // 2. Qt GUI & Widgets
-// ==========================================
 #include <QListWidgetItem>
 #include <QFileDialog>
 #include <QDesktopServices>
 #include <QMessageBox>
 
-// ==========================================
 // 3. Project Core & LLM
-// ==========================================
 #include "core/global_defs.h"
 #include "storage/datamanager.h"
 #include "llm/aiclient.h"
 
-// ==========================================
 // 4. File IO & Tasks
-// ==========================================
 #include "file_io/filescanner.h"
 #include "file_io/tasks/build_index_task.h"
 #include "file_io/file_factory.h"
 #include "task/task_factory.h"
 #include "task/workflow/workflow_engine.h"
 
-// ==========================================
 // 5. UI Components
-// ==========================================
 #include "ui/chatbubblewidget.h"
 #include "chathistoryitem.h"
 
@@ -96,9 +86,9 @@ private:
     Ui::MainWidget *ui;
 
     // --- 状态标志与定时器 ---
-    QTimer *ollamaCheckTimer;
-    int settingChanger;
-    bool m_isSidebarExpanded;
+    QTimer *llmCheaker;
+    int setChanger;
+    bool _isExpand;
 
     // --- 设置路径缓存 ---
     QString SCANPATH;
@@ -106,30 +96,29 @@ private:
     QString DIALOGPATH;
 
     // --- AI 会话上下文 ---
-    int m_currentSessionId;
-    int m_generatingSessionId;      // 记录 AI 当前究竟在给哪个会话回答
-    QString m_currentInput;
-    QString m_streamBuffer;         // 积攒 AI 生成的纯文本
-    QString m_rawStreamBuffer;      // 存储网络原始文本 (双缓存)
-    QString m_finalHtmlBuffer;      // 存储解析后的完美 HTML
-    QPointer<ChatBubbleWidget> m_currentAiBubble; // 安全智能指针
+    int _curDialogId;
+    int _nowDialogId;      // 记录 AI 当前究竟在给哪个会话回答
+    QString _currentInput;
+    QString _aiTxt;      // 存储网络原始文本 (双缓存)
+    QString _finalHtml;      // 存储解析后的完美 HTML
+    QPointer<ChatBubbleWidget> _curAiBubble; // 安全智能指针
 
     // --- 附件与记忆上下文 ---
-    QString m_uploadedFilePath;
-    QString m_uploadedFileText;
-    QString m_currentHistoryContext;
+    QString _uploadedFilePath;
+    QString _uploadedFileText;
+    QString _curHistoryContext;
 
     // --- i18n 国际化 ---
-    QTranslator m_translator;    // 翻译器实例
-    void retranslateDynamicUi(); // 刷新代码中手写的动态字符串
+    QTranslator _trs;    // 翻译器实例
+    void trsUi(); // 刷新代码中手写的动态字符串
 
     // --- 内部辅助函数 ---
     void refreshModels();
     void refreshSidebar();
-    void appendChatMessage(const QString &text, bool isUser);
-    void onRenameRequested(int sessionId, const QString& newTitle);
-    QString parseAiStreamToHtml(const QString& rawStream);
-    QString buildRecentHistoryContext(int sessionId, int maxRounds);
+    void addChatMsg(const QString &text, bool isUser);
+    void reNameDialog(int sId, const QString& Title);
+    QString parseAiStreamToHtml(const QString& rStream);
+    QString DialogBuilder(int sessionId, int maxRounds);
 };
 
 #endif // MAINWIDGET_H

@@ -45,55 +45,55 @@ enum class ErrorCode {
 
 // 1. 文档数据（文件处理模块 -> 内容转换模块）
 struct FileTxt {
-    QString fileName;          // 8 bytes
-    QString filePath;          // 8 bytes
-    QString Text;              // 8 bytes
-    FileType typeName;         // 4 bytes
-    bool isOpen;               // 1 byte
+    QString fileName;
+    QString filePath;
+    QString Text;
+    FileType typeName;
+    bool isOpen;
 };
 
 // 2. 文档切片数据（内容转换模块 -> 数据存取模块）
 struct DocChunk {
-    double score = 0.0;        // 8 bytes
-    QString fileName;          // 8 bytes
-    QString filePath;          // 8 bytes
-    QString pureText;          // 8 bytes
-    QString parentText;        // 8 bytes
-    int chunkId = -1;          // 4 bytes (凑在一起)
-    int parentId = -1;         // 4 bytes (凑在一起，4+4刚好填满一个 8 字节对齐)
+    double score = 0.0;
+    QString fileName;
+    QString filePath;
+    QString pureText;
+    QString parentText;
+    int chunkId = -1;
+    int parentId = -1;
 };
 
 // 3. 扩充 ParsedIntent 结构体
 struct ParsedIntent {
-    QStringList keywords;      // 8 bytes
-    QString hydeText;          // 8 bytes
-    QString targetFileName;    // 8 bytes
-    QString extractTarget;     // 8 bytes
-    QString uploadedFileName;  // 8 bytes
-    QString uploadedFilePath;  // 8 bytes
-    QString uploadedFileText;  // 8 bytes
-    IntentType intentType;     // 4 bytes (移到最后)
+    QStringList keywords;
+    QString hydeText;
+    QString targetFileName;
+    QString extractTarget;
+    QString uploadedFileName;
+    QString uploadedFilePath;
+    QString uploadedFileText;
+    IntentType intentType;
 };
 
 // 4. 任务执行结果（任务处理模块 -> LLM交互模块/UI）
 struct TaskResult {
-    ParsedIntent aim;          // 64 bytes
-    QString directUIResponse;  // 8 bytes
-    QString errorMsg;          // 8 bytes
-    std::vector<DocChunk> slices;// 24 bytes
-    bool success = true;       // 1 byte
+    ParsedIntent aim;
+    QString directUIResponse;
+    QString errorMsg;
+    std::vector<DocChunk> slices;
+    bool success = true;
 };
 
 struct SessionInfo {
-    QString title;             // 8 bytes
-    QString createTime;        // 8 bytes
-    int sessionId;             // 4 bytes (移至末尾，减少Padding)
+    QString title;
+    QString createTime;
+    int sessionId;
 };
 
 struct MessageInfo {
-    QString role;              // 8 bytes
-    QString content;           // 8 bytes
-    int msgId;                 // 4 bytes (移至末尾，减少Padding)
+    QString role;
+    QString content;
+    int msgId;
 };
 
 static IntentType getIntentEnum(const QString& intent)
@@ -119,12 +119,12 @@ enum class ChunkType {
 };
 
 struct StreamChunk {
-    QString text;              // 8 bytes
+    QString text;
     ChunkType type;            // 4 bytes
 };
 
 struct StreamState {
-    QString tagBuffer;         // 8 bytes (移至前面)
+    QString tagBuffer;
     bool isThinking = false;   // 1 byte
 };
 
@@ -141,30 +141,30 @@ struct PendingTask {
 // Workflow Agentic Blackboard
 // 描述大模型规划出的单步执行任务
 struct WorkflowStep {
-    QString actionName;                   // 8 bytes - 工具名称，如 "tool_extract"
-    QString description;                  // 8 bytes - 大模型生成的该步解释
-    QMap<QString, QString> params;        // 8 bytes - 动态参数
-    int stepId = 0;                       // 4 bytes - 执行顺序 ID (移至末尾)
+    QString actionName; //- 工具名称
+    QString description;   //- 大模型生成的该步解释
+    QMap<QString, QString> params;  //- 动态参数
+    int stepId = 0;   // 4 bytes - 执行顺序 ID (移至末尾)
 };
 
 // Agent 工作流的全局黑板 Blackboard
 struct WorkflowContext {
     //静态输入区
-    QString originalQuery;                // 8 bytes
-    QString uploadedFileText;             // 8 bytes
-    QString uploadedFileName;             // 8 bytes
+    QString originalQuery;
+    QString uploadedFileText;
+    QString uploadedFileName;
     QString uploadedFilePath;
     //强类型流转区常用原子的明确输出位置
-    QStringList extractedEntities;        // 8 bytes
+    QStringList extractedEntities;
     QList<DocChunk> recalledChunks; // 24 bytes
-    QString intermediateAnswer;           // 8 bytes
+    QString intermediateAnswer;
 
     //动态插槽
-    QVariantMap dynamicBlackboard;        // 8 bytes
+    QVariantMap dynamicBlackboard;
 
     //执行状态
-    QString errorMsg;                     // 8 bytes (移到 hasError 前面，消除 7 字节 Padding！)
-    bool hasError = false;                // 1 byte
+    QString errorMsg;
+    bool hasError = false;
 };
 
 #endif // GLOBAL_DEFS_H

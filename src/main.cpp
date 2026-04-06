@@ -20,10 +20,8 @@ int main(int argc, char *argv[])
     app.setFont(globalFont);
 
     qDebug() << "-系统启动中...";
-    // 路径初始化
-    QString appPath = QApplication::applicationDirPath();
-    // 数据存储路径
-    QString dbDir = appPath + "/data/db";
+    QString appPath = QApplication::applicationDirPath();// 路径初始化
+    QString dbDir = appPath + "/data/db";// 数据存储路径
     QString vectorDir = appPath + "/data/vector";
     // 模型资源路径
     QString modelPath     = appPath + "/models/bge_onnx/model.onnx";
@@ -37,18 +35,18 @@ int main(int argc, char *argv[])
     QDir dir;
     if (!dir.exists(dbDir)) dir.mkpath(dbDir);
     if (!dir.exists(vectorDir)) dir.mkpath(vectorDir);
-    // 核心组件初始化
+    // 组件初始化
     // 初始化 SQLite 数据库 (存放文本和对话)
     QString dbFile = dbDir + "/pdan_main.db";
     if (!Datamanager::getInstance().init(dbFile)) {
-        qCritical() << "[FATAL]数据库初始化失败！程序终止。";
+        qCritical() << "[FATAL]数据库初始化失败-程序终止。";
         return -1;
     }
     qDebug() << "[SQLite] 数据库就绪";
     // 初始化向量库 (512维对应 BGE-large)
     QString vectorFile = vectorDir + "/hnsw_index.bin";
     if (!VectorDB::getInstance().init(vectorFile, 512, 10000)) {
-        qCritical() << "[FATAL]向量数据库初始化失败！请检查系统内存。";
+        qCritical() << "[FATAL]向量数据库初始化失败-请检查系统内存。";
         return -1;
     }
     qDebug() << "[HNSW] 向量索引库就绪";
@@ -69,7 +67,7 @@ int main(int argc, char *argv[])
     }
     // 唤醒 OCR 光学字符识别引擎
     if (!OcrEngine::getInstance().init(ocrModelsPath)) {
-        qWarning() << "[WARN]OCR 引擎加载失败！图片解析功能将受限。请检查目录：";
+        qWarning() << "[WARN]OCR 引擎加载失败-图片解析功能将受限。请检查目录：";
         qWarning() << "   -> " << ocrModelsPath;
     } else {
         qDebug() << "[PP-OCR] 识别引擎就绪";

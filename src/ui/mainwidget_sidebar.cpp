@@ -1,13 +1,13 @@
 #include "mainwidget.h"
 #include "ui_mainwidget.h"
 
-// 侧边栏：历史记录管理
+//历史记录管理
 void MainWidget::on_btnNewChat_clicked()
 {
     ui->listWidgetChat->clear();
     int newId = Datamanager::getInstance().createSession(tr("新对话 "));
     if (newId != -1) {
-        m_currentSessionId = newId;
+        _curDialogId = newId;
         refreshSidebar();
         ui->labelStatus->setText(tr("🟢 已开启新会话"));
     }
@@ -16,20 +16,20 @@ void MainWidget::on_btnNewChat_clicked()
 void MainWidget::on_listChatHistory_itemClicked(QListWidgetItem *item)
 {
     int sId = item->data(Qt::UserRole).toInt();
-    m_currentSessionId = sId;
+    _curDialogId = sId;
     ui->listWidgetChat->clear();
 
     QList<MessageInfo> history = Datamanager::getInstance().getMessagesBySession(sId);
     for (const auto& msg : history) {
-        // 由于我们在收发时已经标准化存了 HTML，这里直接扔给气泡就行，完美保留换行！
-        appendChatMessage(msg.content, msg.role == "user");
+        // 由于我们在收发时已经标准化存了 HTML，这里直接扔给气泡就行，完美保留换行
+        addChatMsg(msg.content, msg.role == "user");
     }
 
-    // 如果我们切回了【正在生成】的存档，立刻复活那个气泡！
-    if (m_currentSessionId == m_generatingSessionId) {
-        appendChatMessage("", false); // 创建一个空壳并捏住指针
-        if (m_currentAiBubble) {
-            m_currentAiBubble->updateContent(m_finalHtmlBuffer); // 把后台积攒的进度灌进去
+    // 如果我们切回了正在生成的存档，立刻复活那个气泡
+    if (_curDialogId == _nowDialogId) {
+        addChatMsg("", false); // 创建一个空壳并捏住指针
+        if (_curAiBubble) {
+            _curAiBubble->updateContent(_finalHtml); // 把后台积攒的进度灌进去
         }
     }
 
@@ -38,13 +38,13 @@ void MainWidget::on_listChatHistory_itemClicked(QListWidgetItem *item)
 }
 
 
-//收缩机制
+//收缩
 void MainWidget::on_btnToggleSidebar_clicked()
 {
-    // 防抖：防止连续点击
+    // 防连续点击
     ui->btnToggleSidebar->setEnabled(false);
 
-    // 动态获取当前的真实宽度作为起点，而不是写死 250
+    // 动态获取当前的真实宽度作为起点
     int currentWidth = ui->sidebarWidget->width();
     int expandedWidth = 250;
     int collapsedWidth = 60;
@@ -64,7 +64,7 @@ void MainWidget::on_btnToggleSidebar_clicked()
     animMax->setEasingCurve(QEasingCurve::InOutQuad);
     animGroup->addAnimation(animMax);
 
-    if (m_isSidebarExpanded) {
+    if (_isExpand) {
         // 执行收起逻辑
         // 在隐藏内部组件之前，强制锁定当前的最小宽度这样即使组件隐藏了，布局引擎也无法瞬间把侧边栏压扁
         ui->sidebarWidget->setMinimumWidth(currentWidth);
@@ -80,7 +80,7 @@ void MainWidget::on_btnToggleSidebar_clicked()
         animMax->setStartValue(currentWidth);
         animMax->setEndValue(collapsedWidth);
 
-        m_isSidebarExpanded = false;
+        _isExpand = false;
     } else {
         // 执行展开逻辑
         ui->btnToggleSidebar->setText("<<<");
@@ -96,15 +96,14 @@ void MainWidget::on_btnToggleSidebar_clicked()
         animMax->setStartValue(currentWidth);
         animMax->setEndValue(expandedWidth);
 
-        m_isSidebarExpanded = true;
+        _isExpand = true;
     }
 
-    // 动画结束后的善后工作
     connect(animGroup, &QParallelAnimationGroup::finished, this, [=]() {
         ui->btnToggleSidebar->setEnabled(true);
     });
 
-    // 启动动画组，结束后自动销毁
+    // 启动动画组，结束后销毁
     animGroup->start(QAbstractAnimation::DeleteWhenStopped);
 }
 
@@ -122,8 +121,8 @@ void MainWidget::refreshSidebar()
         connect(customItem, &ChatHistoryItem::deleteRequested, this, [this, listItem](int sId){
             Datamanager::getInstance().deleteSession(sId);
             delete ui->listChatHistory->takeItem(ui->listChatHistory->row(listItem));
-            if (m_currentSessionId == sId) {
-                m_currentSessionId = -1;
+            if (_curDialogId == sId) {
+                _curDialogId = -1;
                 ui->listWidgetChat->clear();
             }
         });

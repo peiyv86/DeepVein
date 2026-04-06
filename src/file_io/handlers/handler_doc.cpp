@@ -1,6 +1,6 @@
 #include "handler_doc.h"
 #include "core/excepthandler.h"
-#include "convert/ocrengine.h" // 必须引入 OCR 引擎来处理扫描件
+#include "convert/ocrengine.h"
 #include "pugixml/pugixml.hpp"
 
 #include <QFileInfo>
@@ -71,7 +71,7 @@ bool unzipDocx(const QString& docxPath, const QString& targetDir) {
 
     QDir checkDir(targetDir);
     if (!checkDir.exists("word")) {
-        qDebug() << "解压失败：目标目录中没有找到 word 文件夹！";
+        qDebug() << "解压失败：目标目录中没有找到 word 文件夹";
         return false;
     }
     return true;
@@ -138,7 +138,7 @@ FileTxt HandlerDoc::extractText(const QString& filePath) {
                 qDebug() << "错误：解压目录中找不到 word/document.xml";
             }
         } else {
-            qDebug() << "错误：PowerShell 解压失败！";
+            qDebug() << "错误：PowerShell 解压失败";
         }
 
         // C. 销毁临时痕迹

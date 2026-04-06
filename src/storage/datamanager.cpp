@@ -20,7 +20,7 @@ Datamanager::~Datamanager()
 QSqlDatabase Datamanager::getThreadLocalConnection()
 {
     // 1. 如果当前来请求的线程，就是最初始化数据库的主线程
-    // 我们直接把主连接给它，完全不用调用危险的 database() 去试探！
+    // 我们直接把主连接给它，完全不用调用危险的 database() 去试探
     if (QThread::currentThread() == m_mainThread) {
         return QSqlDatabase::database("pdan_sql_connection");
     }

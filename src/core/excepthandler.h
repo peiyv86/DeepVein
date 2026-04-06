@@ -34,8 +34,8 @@ private:
     // 辅助工具：将 ErrorCode 转换为直观的字符串名
     QString errorCodeToString(ErrorCode code);
 
-    QMutex m_mutex;        // 线程安全锁，防止多线程同时写入日志崩溃
-    QString m_logFilePath; // 错误日志文件的持久化路径
+    QMutex _mutex;        // 线程安全锁，防止多线程同时写入日志崩溃
+    QString _logFilePath; // 错误日志文件的持久化路径
 };
 
 #endif // EXCEPTHANDLER_H

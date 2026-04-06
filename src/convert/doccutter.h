@@ -16,12 +16,11 @@ public:
     }
 
     /**
-     * @brief 滑动窗口切片算法 (原版：值传递)
-     * 适合用于切分数量较少的父切片，或者无需极致性能优化的场景。
+     * @brief 滑动窗口切片算法用于切分数量较少的父切片，或者无需极致性能优化的场景。
      * @param fileData 从 file_io 模块传来的完整文件结构
-     * @param chunkSize 每个切片的目标最大字符数 (默认 500)
-     * @param overlap 上下文重叠的字符数 (默认 50，防止句子被硬切断)
-     * @return 切割好的片段列表 (副本传递)
+     * @param chunkSize 每个切片的目标最大字符数
+     * @param overlap 上下文重叠的字符数
+     * @return 切割好的片段列表
      */
     QList<DocChunk> splitText(const FileTxt& fileData, int chunkSize = 500, int overlap = 50);
 
